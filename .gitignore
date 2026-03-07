@@ -1,0 +1,25 @@
+# Sensitive data
+users.json
+chat_history.db
+
+# Uploads
+uploads/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Logs
+logs/
+*.log
+
+# Binary
+*.exe
+
+# Images (user-specific)
+*.png
+*.jpg
+*.jpeg
+
+# Data files
+xtracker_daily_data.json

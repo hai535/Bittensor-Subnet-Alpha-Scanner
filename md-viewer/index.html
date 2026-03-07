@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MD Viewer</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11/highlight.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11/styles/github-dark.min.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0d1117; color: #c9d1d9;
+  display: flex; height: 100vh;
+}
+#sidebar {
+  width: 280px; min-width: 280px;
+  background: #161b22; border-right: 1px solid #30363d;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+#sidebar-header {
+  padding: 16px; border-bottom: 1px solid #30363d;
+  font-size: 14px; font-weight: 600; color: #58a6ff;
+}
+#dir-path {
+  padding: 8px 16px; font-size: 11px; color: #8b949e;
+  word-break: break-all; border-bottom: 1px solid #30363d;
+}
+#dir-nav { padding: 4px 16px; border-bottom: 1px solid #30363d; }
+#dir-nav button {
+  background: #21262d; border: 1px solid #30363d; color: #c9d1d9;
+  padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;
+  margin: 4px 4px 4px 0;
+}
+#dir-nav button:hover { background: #30363d; }
+#file-list {
+  flex: 1; overflow-y: auto; padding: 8px 0;
+}
+.file-item, .dir-item {
+  padding: 8px 16px; cursor: pointer; font-size: 13px;
+  display: flex; align-items: center; gap: 8px;
+  transition: background 0.15s;
+}
+.file-item:hover, .dir-item:hover { background: #21262d; }
+.file-item.active { background: #1f6feb33; color: #58a6ff; }
+.file-icon { font-size: 16px; flex-shrink: 0; }
+.file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-size { font-size: 11px; color: #8b949e; }
+#main {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+}
+#toolbar {
+  padding: 10px 20px; border-bottom: 1px solid #30363d;
+  display: flex; align-items: center; gap: 12px; background: #161b22;
+}
+#toolbar .title { font-size: 14px; font-weight: 600; flex: 1; }
+#toolbar button {
+  background: #21262d; border: 1px solid #30363d; color: #c9d1d9;
+  padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;
+}
+#toolbar button:hover { background: #30363d; }
+#toolbar button.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+#content {
+  flex: 1; overflow-y: auto; padding: 32px 48px;
+}
+#drop-zone {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 16px; color: #8b949e;
+}
+#drop-zone.drag-over { background: #1f6feb11; }
+#drop-zone .icon { font-size: 64px; opacity: 0.3; }
+#drop-zone .text { font-size: 16px; }
+#drop-zone .sub { font-size: 13px; }
+
+/* Markdown styles */
+.markdown-body { line-height: 1.7; font-size: 15px; max-width: 900px; }
+.markdown-body h1 { font-size: 2em; border-bottom: 1px solid #30363d; padding-bottom: 0.3em; margin: 24px 0 16px; }
+.markdown-body h2 { font-size: 1.5em; border-bottom: 1px solid #30363d; padding-bottom: 0.3em; margin: 24px 0 16px; }
+.markdown-body h3 { font-size: 1.25em; margin: 24px 0 16px; }
+.markdown-body p { margin: 0 0 16px; }
+.markdown-body a { color: #58a6ff; text-decoration: none; }
+.markdown-body a:hover { text-decoration: underline; }
+.markdown-body code {
+  background: #21262d; padding: 2px 6px; border-radius: 4px;
+  font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9em;
+}
+.markdown-body pre {
+  background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+  padding: 16px; overflow-x: auto; margin: 0 0 16px;
+}
+.markdown-body pre code { background: none; padding: 0; }
+.markdown-body blockquote {
+  border-left: 4px solid #30363d; padding: 0 16px; color: #8b949e; margin: 0 0 16px;
+}
+.markdown-body table { border-collapse: collapse; width: 100%; margin: 0 0 16px; }
+.markdown-body th, .markdown-body td {
+  border: 1px solid #30363d; padding: 8px 12px; text-align: left;
+}
+.markdown-body th { background: #161b22; font-weight: 600; }
+.markdown-body tr:nth-child(even) { background: #161b2208; }
+.markdown-body ul, .markdown-body ol { padding-left: 2em; margin: 0 0 16px; }
+.markdown-body li { margin: 4px 0; }
+.markdown-body img { max-width: 100%; border-radius: 8px; }
+.markdown-body hr { border: none; border-top: 1px solid #30363d; margin: 24px 0; }
+
+/* Raw view */
+#raw-content {
+  white-space: pre-wrap; font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 14px; line-height: 1.6; color: #c9d1d9; max-width: 900px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #484f58; }
+
+/* Open file button */
+.open-btn {
+  background: #238636; border: none; color: #fff;
+  padding: 10px 24px; border-radius: 6px; cursor: pointer;
+  font-size: 14px; font-weight: 500; margin-top: 8px;
+}
+.open-btn:hover { background: #2ea043; }
+</style>
+</head>
+<body>
+<div id="sidebar">
+  <div id="sidebar-header">MD Viewer</div>
+  <div id="dir-path">Loading...</div>
+  <div id="dir-nav">
+    <button onclick="goUp()">.. Parent</button>
+    <button onclick="chooseDir()">Open Folder</button>
+  </div>
+  <div id="file-list"></div>
+</div>
+<div id="main">
+  <div id="toolbar" style="display:none">
+    <span class="title" id="file-title">-</span>
+    <button id="btn-preview" class="active" onclick="setView('preview')">Preview</button>
+    <button id="btn-raw" onclick="setView('raw')">Raw</button>
+  </div>
+  <div id="content">
+    <div id="drop-zone">
+      <div class="icon">📄</div>
+      <div class="text">Select a Markdown file from the sidebar</div>
+      <div class="sub">Or drag & drop a .md file here</div>
+      <input type="file" id="file-input" accept=".md" style="display:none" onchange="handleFileInput(event)">
+      <button class="open-btn" onclick="document.getElementById('file-input').click()">Open .md File</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentDir = '';
+let currentView = 'preview';
+let currentRaw = '';
+
+marked.setOptions({
+  highlight: function(code, lang) {
+    if (lang && hljs.getLanguage(lang)) {
+      return hljs.highlight(code, {language: lang}).value;
+    }
+    return hljs.highlightAuto(code).value;
+  },
+  breaks: true
+});
+
+async function init() {
+  try {
+    const res = await fetch('/api/init');
+    const data = await res.json();
+    if (data.file) {
+      loadFile(data.file);
+      currentDir = data.file.substring(0, data.file.lastIndexOf('\\')) || data.file.substring(0, data.file.lastIndexOf('/'));
+      loadDir(currentDir);
+    } else {
+      loadDir('');
+    }
+  } catch(e) {
+    loadDir('');
+  }
+}
+
+async function loadDir(dir) {
+  try {
+    const url = dir ? `/api/list?dir=${encodeURIComponent(dir)}` : '/api/list';
+    const res = await fetch(url);
+    const data = await res.json();
+    currentDir = data.dir;
+    document.getElementById('dir-path').textContent = currentDir;
+
+    const list = document.getElementById('file-list');
+    list.innerHTML = '';
+
+    if (data.dirs) {
+      data.dirs.forEach(d => {
+        const el = document.createElement('div');
+        el.className = 'dir-item';
+        el.innerHTML = `<span class="file-icon">📁</span><span class="file-name">${esc(d.name)}</span>`;
+        el.onclick = () => loadDir(d.path);
+        list.appendChild(el);
+      });
+    }
+
+    if (data.files) {
+      data.files.forEach(f => {
+        const el = document.createElement('div');
+        el.className = 'file-item';
+        el.dataset.path = f.path;
+        el.innerHTML = `<span class="file-icon">📝</span><span class="file-name">${esc(f.name)}</span><span class="file-size">${f.size}</span>`;
+        el.onclick = () => loadFile(f.path);
+        list.appendChild(el);
+      });
+    }
+
+    if ((!data.dirs || data.dirs.length === 0) && (!data.files || data.files.length === 0)) {
+      list.innerHTML = '<div style="padding:16px;color:#8b949e;font-size:13px">No .md files found</div>';
+    }
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+async function loadFile(path) {
+  try {
+    const res = await fetch(`/api/read?path=${encodeURIComponent(path)}`);
+    if (!res.ok) throw new Error(await res.text());
+    currentRaw = await res.text();
+
+    const name = path.split(/[/\\]/).pop();
+    document.getElementById('file-title').textContent = name;
+    document.getElementById('toolbar').style.display = 'flex';
+
+    // Highlight active file
+    document.querySelectorAll('.file-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.path === path);
+    });
+
+    renderContent();
+  } catch(e) {
+    document.getElementById('content').innerHTML = `<div style="padding:32px;color:#f85149">${esc(e.message)}</div>`;
+  }
+}
+
+function renderContent() {
+  const content = document.getElementById('content');
+  if (currentView === 'preview') {
+    content.innerHTML = `<div class="markdown-body">${marked.parse(currentRaw)}</div>`;
+  } else {
+    content.innerHTML = `<pre id="raw-content">${esc(currentRaw)}</pre>`;
+  }
+}
+
+function setView(view) {
+  currentView = view;
+  document.getElementById('btn-preview').classList.toggle('active', view === 'preview');
+  document.getElementById('btn-raw').classList.toggle('active', view === 'raw');
+  if (currentRaw) renderContent();
+}
+
+function goUp() {
+  if (!currentDir) return;
+  // Handle both Windows and Unix paths
+  let parent = currentDir.replace(/[/\\][^/\\]*$/, '');
+  if (parent === currentDir) return;
+  if (parent === '' && currentDir.match(/^[A-Z]:/i)) parent = currentDir.substring(0, 3);
+  loadDir(parent);
+}
+
+function chooseDir() {
+  const dir = prompt('Enter folder path:', currentDir);
+  if (dir) loadDir(dir);
+}
+
+function handleFileInput(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    currentRaw = e.target.result;
+    document.getElementById('file-title').textContent = file.name;
+    document.getElementById('toolbar').style.display = 'flex';
+    renderContent();
+  };
+  reader.readAsText(file);
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// Drag and drop
+const body = document.body;
+body.addEventListener('dragover', e => {
+  e.preventDefault();
+  document.getElementById('drop-zone')?.classList.add('drag-over');
+});
+body.addEventListener('dragleave', e => {
+  document.getElementById('drop-zone')?.classList.remove('drag-over');
+});
+body.addEventListener('drop', e => {
+  e.preventDefault();
+  document.getElementById('drop-zone')?.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.md')) {
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      currentRaw = ev.target.result;
+      document.getElementById('file-title').textContent = file.name;
+      document.getElementById('toolbar').style.display = 'flex';
+      renderContent();
+    };
+    reader.readAsText(file);
+  }
+});
+
+init();
+</script>
+</body>
+</html>
