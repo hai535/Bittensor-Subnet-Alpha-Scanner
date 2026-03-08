@@ -1,7 +1,9 @@
 import os
 import json
+import select
 import subprocess
 import threading
+import time
 import uuid
 from flask import Flask, request, jsonify, send_file, Response, stream_with_context
 import chat_store
@@ -64,21 +66,39 @@ def chat():
 
     chat_store.add_message(session_id, "user", message, user=user)
 
-    # Build conversation context for claude CLI
-    # Use the last few messages as context
-    history = chat_store.get_messages(session_id)
-    prompt_parts = []
-    for msg in history[-10:]:  # last 10 messages for context
-        if msg["role"] == "user":
-            prompt_parts.append(f"User: {msg['content']}")
-        else:
-            prompt_parts.append(f"Assistant: {msg['content']}")
+    # Build conversation context with token budget
+    # ~4 chars per token, budget ~3000 tokens = ~12000 chars for context
+    MAX_CONTEXT_CHARS = 12000
+    MAX_MSG_CHARS = 2000  # truncate individual messages
 
-    full_prompt = "\n".join(prompt_parts)
-    if len(history) > 1:
-        full_prompt = "Previous conversation:\n" + "\n".join(prompt_parts[:-1]) + "\n\nNow respond to the latest message: " + message
-    else:
+    history = chat_store.get_messages(session_id)
+
+    def truncate_msg(text, limit=MAX_MSG_CHARS):
+        if len(text) <= limit:
+            return text
+        return text[:limit] + "...[truncated]"
+
+    # Build context from most recent messages, respecting budget
+    if len(history) <= 1:
         full_prompt = message
+    else:
+        context_parts = []
+        total_chars = 0
+        # Walk backwards from second-to-last (skip current message)
+        for msg in reversed(history[:-1]):
+            content = truncate_msg(msg["content"])
+            prefix = "User" if msg["role"] == "user" else "Assistant"
+            part = f"{prefix}: {content}"
+            if total_chars + len(part) > MAX_CONTEXT_CHARS:
+                break
+            context_parts.append(part)
+            total_chars += len(part)
+
+        context_parts.reverse()
+        if context_parts:
+            full_prompt = "Previous conversation:\n" + "\n".join(context_parts) + "\n\nNow respond to the latest message: " + message
+        else:
+            full_prompt = message
 
     def generate():
         try:
@@ -94,12 +114,43 @@ def chat():
             )
 
             full_response = ""
+            timeout_seconds = 600  # 10 minute timeout
+            start_time = time.time()
+            last_heartbeat = time.time()
+            heartbeat_interval = 15  # send heartbeat every 15s
             while True:
-                chunk = proc.stdout.read(20)
-                if not chunk:
+                elapsed = time.time() - start_time
+                if elapsed > timeout_seconds:
+                    proc.kill()
+                    if full_response:
+                        full_response += "\n\n[Response timed out after 10 minutes]"
+                    else:
+                        full_response = "[Response timed out after 10 minutes]"
+                    timeout_text = '\n\n[超时：回复超过10分钟已中断]'
+                    yield f"data: {json.dumps({'text': timeout_text})}\n\n"
                     break
-                full_response += chunk
-                yield f"data: {json.dumps({'text': chunk})}\n\n"
+
+                # Use select to avoid blocking forever
+                ready, _, _ = select.select([proc.stdout], [], [], 2.0)
+                if ready:
+                    chunk = proc.stdout.read(20)
+                    if not chunk:
+                        break
+                    full_response += chunk
+                    yield f"data: {json.dumps({'text': chunk})}\n\n"
+                    last_heartbeat = time.time()
+                elif proc.poll() is not None:
+                    # Process ended, read remaining
+                    remaining = proc.stdout.read()
+                    if remaining:
+                        full_response += remaining
+                        yield f"data: {json.dumps({'text': remaining})}\n\n"
+                    break
+                else:
+                    # Send heartbeat to keep connection alive
+                    if time.time() - last_heartbeat >= heartbeat_interval:
+                        yield f"data: {json.dumps({'heartbeat': True})}\n\n"
+                        last_heartbeat = time.time()
 
             proc.wait()
             if proc.returncode != 0:

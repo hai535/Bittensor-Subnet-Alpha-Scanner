@@ -8,22 +8,25 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
-  background: #EDEDED;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', 'JetBrains Mono', monospace;
+  background: #0a0e14;
   height: 100vh;
   height: 100dvh;
   display: flex;
   overflow: hidden;
+  color: #00ff88;
 }
 
 /* === Left Sidebar === */
 .sidebar {
   width: 280px;
-  background: #1E1E1E;
+  background: #0d1117;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   transition: width 0.3s ease, transform 0.3s ease;
+  position: relative;
+  border-right: 1px solid rgba(0, 255, 136, 0.1);
 }
 .sidebar.collapsed {
   width: 0;
@@ -37,31 +40,32 @@ body {
 .sidebar-top .new-chat-btn {
   flex: 1;
   padding: 10px 16px;
-  background: #2A2A2A;
-  border: 1px solid #444;
+  background: rgba(0, 255, 136, 0.05);
+  border: 1px solid rgba(0, 255, 136, 0.15);
   border-radius: 8px;
-  color: #eee;
+  color: #00ff88;
   font-size: 14px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
   transition: background 0.2s;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
 }
-.sidebar-top .new-chat-btn:hover { background: #3A3A3A; }
+.sidebar-top .new-chat-btn:hover { background: rgba(0, 255, 136, 0.1); }
 .sidebar-top .toggle-btn {
   width: 40px;
-  background: #2A2A2A;
-  border: 1px solid #444;
+  background: rgba(0, 255, 136, 0.05);
+  border: 1px solid rgba(0, 255, 136, 0.15);
   border-radius: 8px;
-  color: #eee;
+  color: #00ff88;
   font-size: 16px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.sidebar-top .toggle-btn:hover { background: #3A3A3A; }
+.sidebar-top .toggle-btn:hover { background: rgba(0, 255, 136, 0.1); }
 
 /* Search */
 .sidebar-search {
@@ -70,15 +74,16 @@ body {
 .sidebar-search input {
   width: 100%;
   padding: 8px 12px;
-  background: #2A2A2A;
-  border: 1px solid #444;
+  background: rgba(0, 20, 10, 0.6);
+  border: 1px solid rgba(0, 255, 136, 0.15);
   border-radius: 6px;
-  color: #ccc;
+  color: #00ff88;
   font-size: 13px;
   outline: none;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
 }
-.sidebar-search input::placeholder { color: #666; }
-.sidebar-search input:focus { border-color: #07C160; }
+.sidebar-search input::placeholder { color: rgba(0, 255, 136, 0.3); }
+.sidebar-search input:focus { border-color: #00ff88; box-shadow: 0 0 6px rgba(0, 255, 136, 0.2); }
 
 /* Session List */
 .session-list {
@@ -92,13 +97,16 @@ body {
 .date-group {
   padding: 8px 8px 4px;
   font-size: 11px;
-  color: #666;
+  color: rgba(0, 255, 136, 0.35);
   font-weight: 500;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .session-item {
   padding: 10px 12px;
-  color: #ccc;
+  color: rgba(0, 255, 136, 0.6);
   font-size: 14px;
   cursor: pointer;
   border-radius: 8px;
@@ -107,9 +115,10 @@ body {
   gap: 8px;
   margin-bottom: 2px;
   position: relative;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
 }
-.session-item:hover { background: #2A2A2A; }
-.session-item.active { background: #2A2A2A; color: #fff; }
+.session-item:hover { background: rgba(0, 255, 136, 0.05); }
+.session-item.active { background: rgba(0, 255, 136, 0.1); color: #00ff88; }
 .session-item .s-icon { font-size: 16px; flex-shrink: 0; }
 .session-item .s-title {
   flex: 1;
@@ -127,14 +136,14 @@ body {
 .session-item .s-actions button {
   background: none;
   border: none;
-  color: #888;
+  color: rgba(0, 255, 136, 0.4);
   font-size: 14px;
   cursor: pointer;
   padding: 2px 4px;
   border-radius: 4px;
 }
-.session-item .s-actions button:hover { color: #fff; background: #444; }
-.session-item .s-actions button.del:hover { color: #FA5151; }
+.session-item .s-actions button:hover { color: #00ff88; background: rgba(0, 255, 136, 0.1); }
+.session-item .s-actions button.del:hover { color: #ff3344; }
 
 /* === Main Chat Area === */
 .main {
@@ -142,34 +151,39 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  background: #0a0e14;
 }
 
 /* Header */
 .header {
-  background: #2E2E2E;
-  color: white;
+  background: rgba(10, 14, 20, 0.95);
+  color: #00ff88;
   padding: 14px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
+  border-bottom: 1px solid rgba(0, 255, 136, 0.15);
 }
 .header .btn {
   background: none;
   border: none;
-  color: white;
+  color: #00ff88;
   font-size: 20px;
   cursor: pointer;
   padding: 4px 8px;
   opacity: 0.8;
   border-radius: 6px;
 }
-.header .btn:hover { opacity: 1; background: rgba(255,255,255,0.1); }
+.header .btn:hover { opacity: 1; background: rgba(0, 255, 136, 0.1); }
 .header .title {
   font-size: 17px;
   font-weight: 500;
   text-align: center;
   flex: 1;
+  color: #00ff88;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
 }
 .header .sidebar-toggle-main { display: none; }
 .sidebar.collapsed ~ .main .header .sidebar-toggle-main { display: block; }
@@ -183,6 +197,15 @@ body {
   flex-direction: column;
   gap: 16px;
   -webkit-overflow-scrolling: touch;
+  background: #0a0e14;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 23px,
+      rgba(0, 255, 136, 0.03) 23px,
+      rgba(0, 255, 136, 0.03) 24px
+    );
 }
 
 /* Message row */
@@ -224,10 +247,13 @@ body {
   line-height: 1.6;
   word-wrap: break-word;
   position: relative;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', 'JetBrains Mono', monospace;
 }
 .msg-row.user .bubble {
-  background: #95EC69;
-  color: #000;
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  text-shadow: none;
 }
 .msg-row.user .bubble::after {
   content: '';
@@ -236,12 +262,15 @@ body {
   top: 12px;
   width: 0; height: 0;
   border: 6px solid transparent;
-  border-left-color: #95EC69;
+  border-left-color: rgba(255, 255, 255, 0.15);
   border-right: none;
 }
 .msg-row.assistant .bubble {
-  background: #fff;
-  color: #000;
+  background: rgba(0, 255, 136, 0.08);
+  color: #00ff88;
+  font-weight: 700;
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  text-shadow: 0 0 4px rgba(0, 255, 136, 0.2);
 }
 .msg-row.assistant .bubble::after {
   content: '';
@@ -250,14 +279,14 @@ body {
   top: 12px;
   width: 0; height: 0;
   border: 6px solid transparent;
-  border-right-color: #fff;
+  border-right-color: rgba(255, 255, 255, 0.1);
   border-left: none;
 }
 
 /* Code blocks */
 .bubble pre {
-  background: #2b2b2b;
-  color: #a9b7c6;
+  background: rgba(0, 20, 10, 0.8);
+  color: #00ff88;
   padding: 12px 14px;
   border-radius: 6px;
   overflow-x: auto;
@@ -265,62 +294,63 @@ body {
   font-size: 13px;
   font-family: "JetBrains Mono", "SF Mono", Monaco, Consolas, monospace;
   line-height: 1.6;
-  border: 1px solid #3c3f41;
+  border: 1px solid rgba(0, 255, 136, 0.2);
 }
-.bubble pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+.bubble pre code { background: none; padding: 0; color: inherit; font-size: inherit; font-weight: 400; }
 .bubble code {
-  background: rgba(0,0,0,0.07);
+  background: rgba(0, 255, 136, 0.1);
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 13px;
   font-family: "JetBrains Mono", "SF Mono", Monaco, Consolas, monospace;
-  color: #c7254e;
+  color: #00ccff;
+  font-weight: 400;
 }
-.bubble strong { font-weight: 600; }
+.bubble strong { font-weight: 800; }
 .bubble em { font-style: italic; }
 
-/* Tables - PyCharm style */
+/* Tables - Terminal style */
 .bubble table {
   border-collapse: collapse;
   width: 100%;
   margin: 10px 0;
   font-size: 14px;
-  border: 1px solid #d0d0d0;
+  border: 1px solid rgba(0, 255, 136, 0.2);
   border-radius: 4px;
   overflow: hidden;
 }
 .bubble thead th {
-  background: #f0f0f0;
-  color: #333;
+  background: rgba(0, 255, 136, 0.1);
+  color: #00ff88;
   font-weight: 600;
   padding: 8px 12px;
   text-align: left;
-  border-bottom: 2px solid #c0c0c0;
-  border-right: 1px solid #d8d8d8;
+  border-bottom: 2px solid rgba(0, 255, 136, 0.3);
+  border-right: 1px solid rgba(0, 255, 136, 0.15);
   white-space: nowrap;
 }
 .bubble thead th:last-child { border-right: none; }
 .bubble tbody td {
   padding: 7px 12px;
-  border-bottom: 1px solid #e8e8e8;
-  border-right: 1px solid #e8e8e8;
-  color: #333;
+  border-bottom: 1px solid rgba(0, 255, 136, 0.08);
+  border-right: 1px solid rgba(0, 255, 136, 0.08);
+  color: inherit;
 }
 .bubble tbody td:last-child { border-right: none; }
-.bubble tbody tr:nth-child(even) { background: #f8f9fa; }
-.bubble tbody tr:hover { background: #e8f4fd; }
+.bubble tbody tr:nth-child(even) { background: rgba(0, 255, 136, 0.03); }
+.bubble tbody tr:hover { background: rgba(0, 255, 136, 0.08); }
 .bubble tbody tr:last-child td { border-bottom: none; }
 
 /* Headings */
 .bubble h1, .bubble h2, .bubble h3, .bubble h4 {
   margin: 12px 0 6px;
-  color: #1a1a1a;
+  color: inherit;
   line-height: 1.3;
 }
-.bubble h1 { font-size: 1.4em; border-bottom: 2px solid #e0e0e0; padding-bottom: 4px; }
-.bubble h2 { font-size: 1.25em; border-bottom: 1px solid #e8e8e8; padding-bottom: 3px; }
+.bubble h1 { font-size: 1.4em; border-bottom: 2px solid rgba(0, 255, 136, 0.2); padding-bottom: 4px; }
+.bubble h2 { font-size: 1.25em; border-bottom: 1px solid rgba(0, 255, 136, 0.15); padding-bottom: 3px; }
 .bubble h3 { font-size: 1.1em; }
-.bubble h4 { font-size: 1em; color: #555; }
+.bubble h4 { font-size: 1em; opacity: 0.8; }
 
 /* Lists */
 .bubble ul, .bubble ol {
@@ -330,23 +360,24 @@ body {
 .bubble li {
   margin: 3px 0;
   line-height: 1.6;
+  color: inherit;
 }
 .bubble li > ul, .bubble li > ol { margin: 2px 0; }
 
 /* Blockquote */
 .bubble blockquote {
-  border-left: 3px solid #07C160;
-  background: #f6f8fa;
+  border-left: 3px solid #00ff88;
+  background: rgba(0, 255, 136, 0.05);
   margin: 8px 0;
   padding: 8px 14px;
-  color: #555;
+  color: rgba(0, 255, 136, 0.7);
   border-radius: 0 4px 4px 0;
 }
 
 /* Horizontal rule */
 .bubble hr {
   border: none;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid rgba(0, 255, 136, 0.2);
   margin: 12px 0;
 }
 
@@ -358,9 +389,10 @@ body {
 }
 .typing-dots span {
   width: 7px; height: 7px;
-  background: #999;
+  background: #00ff88;
   border-radius: 50%;
   animation: dotPulse 1.4s infinite;
+  box-shadow: 0 0 4px rgba(0, 255, 136, 0.5);
 }
 .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
 .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
@@ -373,18 +405,19 @@ body {
 .timestamp {
   text-align: center;
   font-size: 12px;
-  color: #999;
+  color: rgba(0, 255, 136, 0.4);
   padding: 4px 12px;
-  background: rgba(206,206,206,0.4);
+  background: rgba(0, 255, 136, 0.05);
   border-radius: 4px;
   align-self: center;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
 }
 
 /* Input area */
 .input-area {
   padding: 8px 12px 12px;
-  background: #F7F7F7;
-  border-top: 0.5px solid #D9D9D9;
+  background: rgba(10, 14, 20, 0.95);
+  border-top: 1px solid rgba(0, 255, 136, 0.15);
   display: flex;
   gap: 8px;
   align-items: flex-end;
@@ -399,23 +432,26 @@ body {
 }
 .input-area textarea {
   flex: 1;
-  border: 1px solid #DCDCDC;
+  border: 1px solid rgba(0, 255, 136, 0.2);
   border-radius: 6px;
   padding: 9px 12px;
   font-size: 16px;
   resize: none;
   max-height: 100px;
   outline: none;
-  font-family: inherit;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
   line-height: 1.4;
-  background: #fff;
+  background: rgba(0, 20, 10, 0.6);
+  color: #00ff88;
+  caret-color: #00ff88;
 }
-.input-area textarea:focus { border-color: #07C160; }
+.input-area textarea::placeholder { color: rgba(0, 255, 136, 0.3); }
+.input-area textarea:focus { border-color: #00ff88; box-shadow: 0 0 8px rgba(0, 255, 136, 0.2); }
 .img-btn {
   width: 38px;
   height: 38px;
-  background: #E8E8E8;
-  border: none;
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid rgba(0, 255, 136, 0.2);
   border-radius: 6px;
   font-size: 20px;
   cursor: pointer;
@@ -424,23 +460,27 @@ body {
   align-items: center;
   justify-content: center;
   transition: background 0.2s;
+  color: #00ff88;
 }
-.img-btn:hover { background: #D0D0D0; }
+.img-btn:hover { background: rgba(0, 255, 136, 0.2); }
 .send-btn {
   padding: 8px 16px;
-  background: #07C160;
-  border: none;
+  background: rgba(0, 255, 136, 0.15);
+  border: 1px solid #00ff88;
   border-radius: 6px;
-  color: white;
+  color: #00ff88;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.2s;
   height: 38px;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  text-shadow: 0 0 6px rgba(0, 255, 136, 0.4);
 }
+.send-btn:hover { background: rgba(0, 255, 136, 0.25); box-shadow: 0 0 12px rgba(0, 255, 136, 0.3); }
 .send-btn:active { transform: scale(0.95); }
-.send-btn:disabled { background: #A8E6C1; cursor: not-allowed; }
+.send-btn:disabled { background: rgba(0, 255, 136, 0.05); border-color: rgba(0, 255, 136, 0.2); color: rgba(0, 255, 136, 0.3); cursor: not-allowed; }
 /* Image preview strip */
 .img-preview-strip {
   display: flex;
@@ -455,7 +495,7 @@ body {
   height: 60px;
   border-radius: 6px;
   overflow: hidden;
-  border: 1px solid #ddd;
+  border: 1px solid rgba(0, 255, 136, 0.2);
 }
 .img-preview-item img {
   width: 100%;
@@ -481,14 +521,14 @@ body {
   display: none;
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(7,193,96,0.15);
-  border: 3px dashed #07C160;
+  background: rgba(0, 255, 136, 0.05);
+  border: 3px dashed #00ff88;
   border-radius: 8px;
   z-index: 100;
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  color: #07C160;
+  color: #00ff88;
   font-weight: 600;
   pointer-events: none;
 }
@@ -510,7 +550,7 @@ body {
   align-items: center;
   justify-content: center;
   flex: 1;
-  color: #aaa;
+  color: rgba(0, 255, 136, 0.5);
   gap: 12px;
   padding: 40px;
 }
@@ -524,8 +564,8 @@ body {
   font-size: 40px;
   box-shadow: 0 4px 20px rgba(217,119,6,0.3);
 }
-.empty-state h2 { color: #666; font-size: 18px; font-weight: 500; }
-.empty-state p { color: #999; font-size: 14px; text-align: center; line-height: 1.6; }
+.empty-state h2 { color: #00ff88; font-size: 18px; font-weight: 500; text-shadow: 0 0 8px rgba(0, 255, 136, 0.3); }
+.empty-state p { color: rgba(0, 255, 136, 0.4); font-size: 14px; text-align: center; line-height: 1.6; font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; }
 
 /* Emoji rain & notification */
 .sticker-rain {
@@ -645,18 +685,18 @@ body {
 /* Scrollbar - chat container */
 .chat-container {
   scrollbar-width: thin;
-  scrollbar-color: #c0c0c0 transparent;
+  scrollbar-color: rgba(0, 255, 136, 0.3) transparent;
 }
 .chat-container::-webkit-scrollbar { width: 8px; }
 .chat-container::-webkit-scrollbar-track { background: transparent; margin: 4px 0; }
 .chat-container::-webkit-scrollbar-thumb {
-  background: #c0c0c0;
+  background: rgba(0, 255, 136, 0.3);
   border-radius: 4px;
   border: 1px solid transparent;
   background-clip: padding-box;
 }
-.chat-container::-webkit-scrollbar-thumb:hover { background: #999; }
-.chat-container::-webkit-scrollbar-thumb:active { background: #777; }
+.chat-container::-webkit-scrollbar-thumb:hover { background: rgba(0, 255, 136, 0.5); }
+.chat-container::-webkit-scrollbar-thumb:active { background: rgba(0, 255, 136, 0.6); }
 
 /* Mobile overlay */
 .sidebar-overlay {
@@ -960,6 +1000,160 @@ body {
   .right-panel.open {
     width: 280px !important;
   }
+  .task-progress { bottom: 4px; left: 4px; right: 4px; height: 200px; }
+}
+
+/* === Task Progress Indicator - Sci-Fi Blue Style === */
+.task-progress {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  height: 280px;
+  background: rgba(6, 10, 20, 0.95);
+  border: 1px solid rgba(0, 170, 255, 0.25);
+  border-radius: 10px;
+  padding: 16px;
+  z-index: 500;
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 0 15px rgba(0, 170, 255, 0.08), inset 0 0 30px rgba(0, 170, 255, 0.03);
+}
+.task-progress::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #00aaff, transparent);
+  animation: taskScanline 2.5s linear infinite;
+}
+.task-progress::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 170, 255, 0.012) 3px,
+    rgba(0, 170, 255, 0.012) 4px
+  );
+  pointer-events: none;
+}
+@keyframes taskScanline {
+  0% { opacity: 0; transform: translateX(-100%); }
+  50% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(100%); }
+}
+.task-progress.active {
+  border-color: rgba(0, 170, 255, 0.5);
+  box-shadow: 0 0 20px rgba(0, 170, 255, 0.15), inset 0 0 30px rgba(0, 170, 255, 0.05);
+}
+.task-progress-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.task-progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(0, 170, 255, 0.4);
+  box-shadow: 0 0 4px rgba(0, 170, 255, 0.2);
+  transition: all 0.3s ease;
+}
+.task-progress-dot.active {
+  background: #00aaff;
+  box-shadow: 0 0 8px #00aaff, 0 0 16px rgba(0, 170, 255, 0.4);
+  animation: taskPulse 1.5s ease-in-out infinite;
+}
+.task-progress-dot.done {
+  animation: none;
+  background: #00ccff;
+  box-shadow: 0 0 10px #00ccff;
+}
+.task-progress-dot.warning {
+  background: #ffaa00;
+  box-shadow: 0 0 8px #ffaa00;
+  animation: taskPulse 0.5s ease-in-out infinite;
+}
+.task-progress-dot.error {
+  animation: none;
+  background: #ff3344;
+  box-shadow: 0 0 8px #ff3344;
+}
+@keyframes taskPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px #00aaff, 0 0 16px rgba(0,170,255,0.4); }
+  50% { opacity: 0.3; box-shadow: 0 0 3px #00aaff, 0 0 6px rgba(0,170,255,0.1); }
+}
+.task-progress-title {
+  color: #00aaff;
+  font-size: 11px;
+  font-weight: 600;
+  flex: 1;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+.task-progress-timer {
+  color: #00ccff;
+  font-size: 28px;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  font-weight: 700;
+  text-align: center;
+  text-shadow: 0 0 12px rgba(0, 170, 255, 0.6), 0 0 24px rgba(0, 170, 255, 0.2);
+  padding: 12px 0;
+  letter-spacing: 3px;
+}
+.task-progress-status {
+  color: rgba(0, 170, 255, 0.5);
+  font-size: 10px;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  text-align: center;
+  letter-spacing: 1px;
+  min-height: 16px;
+}
+.task-progress-bar {
+  height: 3px;
+  background: rgba(0, 170, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.task-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0066ff, #00aaff, #00ccff);
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 8px rgba(0, 170, 255, 0.5);
+}
+.task-progress-bar-fill.indeterminate {
+  width: 30%;
+  animation: taskBarMove 1.8s ease-in-out infinite;
+}
+.task-progress-bar-fill.idle {
+  width: 100%;
+  opacity: 0.15;
+  animation: none;
+}
+@keyframes taskBarMove {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+.task-progress-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: rgba(0, 170, 255, 0.35);
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  letter-spacing: 0.5px;
 }
 </style>
 </head>
@@ -990,6 +1184,21 @@ body {
     <input type="text" id="searchInput" placeholder="Search chats..." oninput="filterSessions(this.value)">
   </div>
   <div class="session-list" id="sessionList"></div>
+  <div class="task-progress" id="taskProgress">
+    <div class="task-progress-header">
+      <div class="task-progress-dot" id="taskDot"></div>
+      <div class="task-progress-title" id="taskTitle">PROCESSING</div>
+    </div>
+    <div class="task-progress-timer" id="taskTimer">00:00</div>
+    <div class="task-progress-status" id="taskStatus">INITIALIZING...</div>
+    <div class="task-progress-bar">
+      <div class="task-progress-bar-fill indeterminate" id="taskBarFill"></div>
+    </div>
+    <div class="task-progress-stats">
+      <span id="taskBytes">0 CHARS</span>
+      <span id="taskChunks">0 CHUNKS</span>
+    </div>
+  </div>
 </div>
 
 <div class="main">
@@ -1049,6 +1258,7 @@ body {
   </div>
 </div>
 
+
 <script>
 let isAdminUser = false;
 let authToken = localStorage.getItem('authToken') || '';
@@ -1067,6 +1277,106 @@ const loginInput = document.getElementById('loginInput');
 const loginError = document.getElementById('loginError');
 let isStreaming = false;
 let msgCount = 0;
+
+// === Task Progress Tracker ===
+const taskProgress = document.getElementById('taskProgress');
+const taskDot = document.getElementById('taskDot');
+const taskTitle = document.getElementById('taskTitle');
+const taskTimer = document.getElementById('taskTimer');
+const taskStatus = document.getElementById('taskStatus');
+const taskBarFill = document.getElementById('taskBarFill');
+const taskBytes = document.getElementById('taskBytes');
+const taskChunks = document.getElementById('taskChunks');
+let taskStartTime = null;
+let taskTimerInterval = null;
+let taskChunkCount = 0;
+let taskCharCount = 0;
+
+function taskProgressIdle() {
+  taskTitle.textContent = 'SYSTEM READY';
+  taskStatus.textContent = 'AWAITING INPUT';
+  taskDot.className = 'task-progress-dot';
+  taskBarFill.className = 'task-progress-bar-fill idle';
+  taskBarFill.style.width = '';
+  taskBarFill.style.background = '';
+  taskTimer.textContent = '--:--';
+  taskBytes.textContent = '-- CHARS';
+  taskChunks.textContent = '-- CHUNKS';
+  taskProgress.classList.remove('active');
+}
+
+function taskProgressShow(title) {
+  taskTitle.textContent = (title || 'PROCESSING').toUpperCase();
+  taskStatus.textContent = 'CONNECTING...';
+  taskDot.className = 'task-progress-dot active';
+  taskBarFill.className = 'task-progress-bar-fill indeterminate';
+  taskBarFill.style.width = '';
+  taskBarFill.style.background = '';
+  taskBytes.textContent = '0 CHARS';
+  taskChunks.textContent = '0 CHUNKS';
+  taskChunkCount = 0;
+  taskCharCount = 0;
+  taskStartTime = Date.now();
+  taskTimer.textContent = '00:00';
+  taskProgress.classList.add('active');
+  clearInterval(taskTimerInterval);
+  taskTimerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - taskStartTime) / 1000);
+    const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+    const s = String(elapsed % 60).padStart(2, '0');
+    taskTimer.textContent = m + ':' + s;
+  }, 1000);
+}
+
+function taskProgressUpdate(chunkText) {
+  taskChunkCount++;
+  taskCharCount += chunkText.length;
+  taskStatus.textContent = 'STREAM ACTIVE';
+  taskBytes.textContent = taskCharCount.toLocaleString() + ' CHARS';
+  taskChunks.textContent = taskChunkCount + ' CHUNKS';
+}
+
+let taskLastDataTime = null;
+let taskDisconnectChecker = null;
+
+function taskProgressDone(success) {
+  clearInterval(taskTimerInterval);
+  clearInterval(taskDisconnectChecker);
+  taskDisconnectChecker = null;
+  if (success) {
+    taskStatus.textContent = 'COMPLETE';
+    taskDot.className = 'task-progress-dot done';
+    taskBarFill.className = 'task-progress-bar-fill';
+    taskBarFill.style.width = '100%';
+  } else {
+    taskStatus.textContent = 'CONNECTION LOST';
+    taskDot.className = 'task-progress-dot error';
+    taskBarFill.className = 'task-progress-bar-fill';
+    taskBarFill.style.width = '100%';
+    taskBarFill.style.background = '#ff3344';
+  }
+  setTimeout(() => {
+    taskProgressIdle();
+  }, 5000);
+}
+
+function taskStartDisconnectWatch() {
+  taskLastDataTime = Date.now();
+  clearInterval(taskDisconnectChecker);
+  taskDisconnectChecker = setInterval(() => {
+    const silent = Math.floor((Date.now() - taskLastDataTime) / 1000);
+    if (silent > 30) {
+      taskStatus.textContent = 'WAITING... ' + silent + 'S';
+      taskDot.className = 'task-progress-dot warning';
+    }
+  }, 2000);
+}
+
+function taskGotData() {
+  taskLastDataTime = Date.now();
+  taskDot.className = 'task-progress-dot';
+  taskStatus.textContent = 'STREAM ACTIVE';
+}
 let allSessions = [];
 let pendingImages = []; // {file, previewUrl}
 
@@ -1643,6 +1953,7 @@ async function sendMessage() {
   }
 
   addTypingIndicator();
+  taskProgressShow('JoJo thinking...');
 
   try {
     const response = await fetch('/api/chat', {
@@ -1665,6 +1976,7 @@ async function sendMessage() {
               fullText += data.text;
               bubbleEl.innerHTML = formatMarkdown(fullText);
               scrollToBottom();
+              taskProgressUpdate(data.text);
             }
             if (data.error) {
               bubbleEl.textContent = '⚠️ ' + data.error;
@@ -1678,6 +1990,8 @@ async function sendMessage() {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
+      taskStatus.textContent = 'Waiting for response...';
+      taskStartDisconnectWatch();
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -1688,10 +2002,17 @@ async function sendMessage() {
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6));
+              if (data.heartbeat) {
+                taskGotData();
+                taskStatus.textContent = 'PROCESSING...';
+                continue;
+              }
               if (data.text) {
                 fullText += data.text;
                 bubbleEl.innerHTML = formatMarkdown(fullText);
                 scrollToBottom();
+                taskProgressUpdate(data.text);
+                taskGotData();
               }
               if (data.error) {
                 bubbleEl.textContent = '⚠️ ' + data.error;
@@ -1705,11 +2026,13 @@ async function sendMessage() {
       processSSELines(text);
     }
 
+    taskProgressDone(true);
     checkSpecialMessage(fullText);
     loadSessions();
   } catch(e) {
     removeTypingIndicator();
     addMessage('assistant', '⚠️ Connection lost: ' + e.message);
+    taskProgressDone(false);
   }
 
   isStreaming = false;
@@ -1718,6 +2041,7 @@ async function sendMessage() {
 }
 
 async function initApp() {
+  taskProgressIdle();
   loadSessions();
   try {
     const res = await fetch('/api/sessions/' + encodeURIComponent(sessionId) + '/messages', { headers: authHeaders() });

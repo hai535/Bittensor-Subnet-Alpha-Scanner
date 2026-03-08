@@ -23,3 +23,9 @@ logs/
 
 # Data files
 xtracker_daily_data.json
+
+# Bittensor analysis (not part of Jojo app)
+bittensor/
+
+# Polymarket analysis
+polymarket_analysis.md
