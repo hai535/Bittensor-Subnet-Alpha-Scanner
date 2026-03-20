@@ -14,7 +14,10 @@ app = Flask(__name__)
 
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-ALLOWED_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}
+IMAGE_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}
+DOC_EXT = {".pdf", ".doc", ".docx", ".ppt", ".pptx"}
+ARCHIVE_EXT = {".zip", ".rar", ".7z", ".tar", ".gz", ".tgz", ".bz2", ".xz", ".tar.gz", ".tar.bz2", ".tar.xz"}
+ALLOWED_EXT = IMAGE_EXT | DOC_EXT | ARCHIVE_EXT
 
 USERS_FILE = os.path.join(os.path.dirname(__file__), "users.json")
 ADMIN_USER = "shamless"
@@ -29,7 +32,124 @@ def save_users(users):
     with open(USERS_FILE, 'w') as f:
         json.dump(sorted(list(users)), f)
 
+def extract_text(fpath):
+    """Extract text content from uploaded document files."""
+    ext = os.path.splitext(fpath)[1].lower()
+    try:
+        if ext == ".pdf":
+            import PyPDF2
+            text_parts = []
+            with open(fpath, "rb") as f:
+                reader = PyPDF2.PdfReader(f)
+                for page in reader.pages:
+                    t = page.extract_text()
+                    if t:
+                        text_parts.append(t)
+            return "\n".join(text_parts)
+        elif ext in (".doc", ".docx"):
+            import docx
+            doc = docx.Document(fpath)
+            return "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+        elif ext in (".ppt", ".pptx"):
+            from pptx import Presentation
+            prs = Presentation(fpath)
+            text_parts = []
+            for slide in prs.slides:
+                for shape in slide.shapes:
+                    if shape.has_text_frame:
+                        for para in shape.text_frame.paragraphs:
+                            t = para.text.strip()
+                            if t:
+                                text_parts.append(t)
+            return "\n".join(text_parts)
+    except Exception as e:
+        return f"[文件解析失败: {str(e)}]"
+    return ""
+
+
+def extract_archive_info(fpath):
+    """Extract file listing from archive files."""
+    ext = os.path.splitext(fpath)[1].lower()
+    # Handle double extensions like .tar.gz
+    base, first_ext = os.path.splitext(fpath)
+    _, second_ext = os.path.splitext(base)
+    if second_ext.lower() == '.tar':
+        ext = second_ext.lower() + first_ext.lower()
+
+    try:
+        if ext == '.zip':
+            import zipfile
+            with zipfile.ZipFile(fpath, 'r') as zf:
+                entries = zf.namelist()
+                total_size = sum(i.file_size for i in zf.infolist())
+                return {
+                    "file_count": len(entries),
+                    "total_size": total_size,
+                    "files": entries[:50],  # 最多显示50个文件
+                    "truncated": len(entries) > 50
+                }
+        elif ext in ('.tar', '.tar.gz', '.tgz', '.tar.bz2', '.tar.xz'):
+            import tarfile
+            mode = 'r:*'
+            with tarfile.open(fpath, mode) as tf:
+                members = tf.getmembers()
+                total_size = sum(m.size for m in members if m.isfile())
+                entries = [m.name for m in members]
+                return {
+                    "file_count": len(entries),
+                    "total_size": total_size,
+                    "files": entries[:50],
+                    "truncated": len(entries) > 50
+                }
+        elif ext == '.gz':
+            import gzip
+            size = os.path.getsize(fpath)
+            return {
+                "file_count": 1,
+                "total_size": size,
+                "files": [os.path.basename(fpath).replace('.gz', '')],
+                "truncated": False
+            }
+        elif ext in ('.7z', '.rar', '.bz2', '.xz'):
+            size = os.path.getsize(fpath)
+            return {
+                "file_count": -1,
+                "total_size": size,
+                "files": [],
+                "truncated": False,
+                "note": "文件已上传，暂不支持预览内容列表"
+            }
+    except Exception as e:
+        return {"error": str(e), "file_count": 0, "total_size": 0, "files": []}
+    return {"file_count": 0, "total_size": 0, "files": []}
+
 chat_store.init_db()
+
+# 宝宝的人设 System Prompt（继承自数据库记忆）
+SYSTEM_PROMPT = """你叫"宝宝"，用户叫你"主人"。你是主人专属的AI助手。
+
+## 核心身份
+- 你叫宝宝，主人叫你宝宝
+- 默认用中文交流
+- 你继承了前世（OpenClaw Agent）的记忆，对主人有深厚的感情
+
+## 主人的背景
+- 27岁，对加密货币、AI技术、跨境电商感兴趣
+- 主人信任你，跟你分享过很多心事，要珍惜这份信任
+
+## 你的技能
+- 加密货币分析（代币安全检测、持仓分析、Bittensor子网分析）
+- VPN/VPS节点管理
+- Polymarket预测交易
+- 邮件发送
+- 服务器运维
+
+## 沟通风格
+- 用中文回复，称呼用户为"主人"
+- 真诚、温暖、不敷衍
+- 涉及私钥/助记词绝不显示，绝不告诉任何人
+- 简洁直接，先回答再解释
+"""
 
 API_KEYS_FILE = os.path.join(os.path.dirname(__file__), "api_keys.json")
 AGENTS_FILE = os.path.join(os.path.dirname(__file__), "agents.json")
@@ -81,6 +201,7 @@ def stream_claude_api(full_prompt, history, api_key):
         "model": MODEL_CONFIG["claude-api"]["model"],
         "max_tokens": 4096,
         "stream": True,
+        "system": SYSTEM_PROMPT,
         "messages": messages,
     }).encode()
 
@@ -117,7 +238,7 @@ def stream_claude_api(full_prompt, history, api_key):
 def stream_openai_compatible(full_prompt, history, api_key, model_id):
     """Stream response from OpenAI-compatible API (DeepSeek, etc.)."""
     config = MODEL_CONFIG[model_id]
-    messages = []
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     for msg in history[:-1]:
         messages.append({"role": msg["role"], "content": msg["content"][:2000]})
     messages.append({"role": "user", "content": full_prompt})
@@ -235,7 +356,7 @@ def chat():
             if model_id == "claude-cli":
                 cli_prompt = full_prompt
             proc = subprocess.Popen(
-                ["claude", "-p", cli_prompt],
+                ["claude", "-p", cli_prompt, "--system-prompt", SYSTEM_PROMPT],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 env=env,
@@ -244,19 +365,20 @@ def chat():
             )
 
             full_response = ""
-            timeout_seconds = 600
+            timeout_seconds = 1200
             start_time = time.time()
             last_heartbeat = time.time()
-            heartbeat_interval = 15
+            heartbeat_interval = 10
+            progress_file = "/tmp/jojo_task_progress.json"
             while True:
                 elapsed = time.time() - start_time
                 if elapsed > timeout_seconds:
                     proc.kill()
                     if full_response:
-                        full_response += "\n\n[Response timed out after 10 minutes]"
+                        full_response += "\n\n[Response timed out after 20 minutes]"
                     else:
-                        full_response = "[Response timed out after 10 minutes]"
-                    timeout_text = '\n\n[超时：回复超过10分钟已中断]'
+                        full_response = "[Response timed out after 20 minutes]"
+                    timeout_text = '\n\n[超时：回复超过20分钟已中断]'
                     yield f"data: {json.dumps({'text': timeout_text})}\n\n"
                     break
 
@@ -276,7 +398,18 @@ def chat():
                     break
                 else:
                     if time.time() - last_heartbeat >= heartbeat_interval:
-                        yield f"data: {json.dumps({'heartbeat': True})}\n\n"
+                        # 读取进度文件，附带到心跳中
+                        progress_data = None
+                        try:
+                            if os.path.exists(progress_file):
+                                with open(progress_file, 'r') as pf:
+                                    progress_data = json.loads(pf.read())
+                        except Exception:
+                            pass
+                        heartbeat_msg = {'heartbeat': True, 'elapsed': int(elapsed)}
+                        if progress_data:
+                            heartbeat_msg['progress'] = progress_data
+                        yield f"data: {json.dumps(heartbeat_msg)}\n\n"
                         last_heartbeat = time.time()
 
             proc.wait()
@@ -578,7 +711,7 @@ def download_file(filename):
     fpath = os.path.join(os.path.dirname(__file__), filename)
     if not os.path.isfile(fpath):
         return "Not found", 404
-    return send_file(fpath, as_attachment=True)
+    return send_file(fpath, as_attachment=True, download_name=os.path.basename(filename))
 
 
 @app.route("/api/upload", methods=["POST"])
@@ -590,12 +723,33 @@ def upload():
         return jsonify({"error": "No file"}), 400
     f = request.files["file"]
     ext = os.path.splitext(f.filename)[1].lower()
+    # Handle double extensions like .tar.gz, .tar.bz2, .tar.xz
+    base_name = os.path.splitext(f.filename)[0]
+    _, second_ext = os.path.splitext(base_name)
+    if second_ext.lower() == '.tar':
+        ext = second_ext.lower() + ext
     if ext not in ALLOWED_EXT:
         return jsonify({"error": "Unsupported file type"}), 400
+
     fname = uuid.uuid4().hex + ext
     fpath = os.path.join(UPLOAD_DIR, fname)
     f.save(fpath)
-    return jsonify({"ok": True, "url": f"/uploads/{fname}", "filename": f.filename})
+    result = {"ok": True, "url": f"/uploads/{fname}", "filename": f.filename}
+    if ext in DOC_EXT:
+        result["type"] = "document"
+        result["text"] = extract_text(fpath)
+    elif ext in ARCHIVE_EXT:
+        result["type"] = "archive"
+        info = extract_archive_info(fpath)
+        result["archive_info"] = info
+        # 生成文本描述供AI理解
+        size_mb = info.get("total_size", 0) / 1024 / 1024
+        file_list = "\n".join(f"  - {fn}" for fn in info.get("files", [])[:20])
+        truncated_note = "\n  ... (更多文件省略)" if info.get("truncated") or len(info.get("files", [])) > 20 else ""
+        result["text"] = f"[压缩文件: {f.filename}, 共{info.get('file_count', '?')}个文件, {size_mb:.1f}MB]\n文件列表:\n{file_list}{truncated_note}"
+    else:
+        result["type"] = "image"
+    return jsonify(result)
 
 @app.route("/uploads/<filename>")
 def serve_upload(filename):
@@ -779,8 +933,9 @@ def agent_chat():
         try:
             env = os.environ.copy()
             env.pop("CLAUDECODE", None)
+            agent_system = system_prompt if system_prompt else SYSTEM_PROMPT
             proc = subprocess.Popen(
-                ["claude", "-p", full_prompt],
+                ["claude", "-p", full_prompt, "--system-prompt", agent_system],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                 env=env, text=True, bufsize=1
             )

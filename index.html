@@ -726,6 +726,82 @@ body.blue-mode {
   align-items: center;
   justify-content: center;
 }
+.doc-preview-item {
+  position: relative;
+  height: 36px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  background: rgba(0, 255, 136, 0.05);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 0 10px;
+  font-size: 12px;
+  color: var(--theme);
+}
+.doc-preview-item .doc-icon { font-size: 16px; flex-shrink: 0; }
+.doc-preview-item .doc-name {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.doc-preview-item .remove-doc {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 2px;
+  margin-left: 2px;
+}
+.doc-preview-item .remove-doc:hover { color: #ff3344; }
+.chat-doc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba(0, 255, 136, 0.08);
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--theme);
+  margin-bottom: 6px;
+}
+.chat-doc-badge .doc-icon { font-size: 14px; }
+
+/* File download button in messages */
+.file-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  margin: 4px 0;
+  background: rgba(0, 255, 136, 0.08);
+  border: 1px solid rgba(0, 255, 136, 0.25);
+  border-radius: 8px;
+  color: var(--theme);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.file-download-btn:hover {
+  background: rgba(0, 255, 136, 0.18);
+  border-color: var(--theme);
+  box-shadow: 0 0 12px rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.2);
+}
+.file-download-btn .dl-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+.file-download-btn .dl-name {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 /* Drag overlay */
 .drag-overlay {
   display: none;
@@ -1825,15 +1901,15 @@ body.blue-mode .chat-container { scrollbar-color: rgba(0,170,255,0.3) transparen
     <span class="label">Send to:</span>
   </div>
   <div class="input-area" id="inputArea">
-    <div class="drag-overlay" id="dragOverlay">Drop image here</div>
+    <div class="drag-overlay" id="dragOverlay">Drop file here</div>
     <div class="img-preview-strip" id="imgPreviewStrip"></div>
     <div class="input-row">
       <div class="agent-input-selector" id="agentInputSelector" onclick="cycleSelectedAgent()">
         <span class="agent-sel-dot" id="agentSelDot"></span>
         <span id="agentSelLabel">ALL</span>
       </div>
-      <button class="img-btn" id="imgBtn" title="Upload image" onclick="document.getElementById('imgFileInput').click()">+</button>
-      <input type="file" id="imgFileInput" accept="image/*" multiple style="display:none" onchange="handleFileSelect(this.files)">
+      <button class="img-btn" id="imgBtn" title="Upload file" onclick="document.getElementById('imgFileInput').click()">+</button>
+      <input type="file" id="imgFileInput" accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.zip,.rar,.7z,.tar,.gz,.tgz,.bz2,.xz" multiple style="display:none" onchange="handleFileSelect(this.files)">
       <textarea id="messageInput" rows="1" placeholder="Send a message..."
         oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
       <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
@@ -2000,23 +2076,64 @@ function taskProgressShow(title) {
 function taskProgressUpdate(chunkText) {
   taskChunkCount++;
   taskCharCount += chunkText.length;
-  taskStatus.textContent = 'STREAM ACTIVE';
+  // 只在没有进度步骤时显示 STREAM ACTIVE
+  if (!taskCurrentStep) {
+    taskStatus.textContent = 'STREAM ACTIVE';
+  }
   taskBytes.textContent = taskCharCount.toLocaleString() + ' CHARS';
   taskChunks.textContent = taskChunkCount + ' CHUNKS';
 }
 
 let taskLastDataTime = null;
 let taskDisconnectChecker = null;
+let taskCurrentStep = '';  // 当前进度步骤文本
+
+/**
+ * 处理后端推送的进度信息
+ * progress 格式: { step: "步骤描述", current: 1, total: 3, percent: 33 }
+ */
+function taskProgressStep(progress) {
+  if (!progress) return;
+  taskLastDataTime = Date.now();
+  taskDot.className = 'task-progress-dot active';
+
+  // 显示步骤描述
+  if (progress.step) {
+    taskCurrentStep = progress.step;
+    let statusText = progress.step.toUpperCase();
+    if (progress.current && progress.total) {
+      statusText = `[${progress.current}/${progress.total}] ${statusText}`;
+    }
+    taskStatus.textContent = statusText;
+  }
+
+  // 更新进度条百分比
+  if (progress.percent !== undefined && progress.percent >= 0) {
+    taskBarFill.className = 'task-progress-bar-fill';
+    taskBarFill.style.width = Math.min(progress.percent, 100) + '%';
+  } else if (progress.current && progress.total) {
+    const pct = Math.round((progress.current / progress.total) * 100);
+    taskBarFill.className = 'task-progress-bar-fill';
+    taskBarFill.style.width = pct + '%';
+  }
+
+  // 更新标题
+  if (progress.task) {
+    taskTitle.textContent = progress.task.toUpperCase();
+  }
+}
 
 function taskProgressDone(success) {
   clearInterval(taskTimerInterval);
   clearInterval(taskDisconnectChecker);
   taskDisconnectChecker = null;
+  taskCurrentStep = '';
   if (success) {
     taskStatus.textContent = 'COMPLETE';
     taskDot.className = 'task-progress-dot done';
     taskBarFill.className = 'task-progress-bar-fill';
     taskBarFill.style.width = '100%';
+    taskBarFill.style.background = '';
   } else {
     taskStatus.textContent = 'CONNECTION LOST';
     taskDot.className = 'task-progress-dot error';
@@ -2034,8 +2151,14 @@ function taskStartDisconnectWatch() {
   clearInterval(taskDisconnectChecker);
   taskDisconnectChecker = setInterval(() => {
     const silent = Math.floor((Date.now() - taskLastDataTime) / 1000);
-    if (silent > 30) {
+    if (silent > 30 && !taskCurrentStep) {
       taskStatus.textContent = 'WAITING... ' + silent + 'S';
+      taskDot.className = 'task-progress-dot warning';
+    } else if (silent > 60) {
+      // 即使有进度步骤，超过60秒也显示警告
+      taskStatus.textContent = taskCurrentStep ?
+        taskCurrentStep.toUpperCase() + ' (' + silent + 'S)' :
+        'WAITING... ' + silent + 'S';
       taskDot.className = 'task-progress-dot warning';
     }
   }, 2000);
@@ -2043,11 +2166,16 @@ function taskStartDisconnectWatch() {
 
 function taskGotData() {
   taskLastDataTime = Date.now();
-  taskDot.className = 'task-progress-dot';
-  taskStatus.textContent = 'STREAM ACTIVE';
+  taskDot.className = 'task-progress-dot active';
+  if (!taskCurrentStep) {
+    taskStatus.textContent = 'STREAM ACTIVE';
+  }
 }
 let allSessions = [];
 let pendingImages = []; // {file, previewUrl}
+let pendingDocs = []; // {file, name}
+const DOC_EXTENSIONS = ['.pdf', '.doc', '.docx', '.ppt', '.pptx'];
+const ARCHIVE_EXTENSIONS = ['.zip', '.rar', '.7z', '.tar', '.gz', '.tgz', '.bz2', '.xz', '.tar.gz', '.tar.bz2', '.tar.xz'];
 
 const imgPreviewStrip = document.getElementById('imgPreviewStrip');
 const inputArea = document.getElementById('inputArea');
@@ -2060,8 +2188,13 @@ inputArea.addEventListener('dragleave', (e) => { e.preventDefault(); dragCounter
 inputArea.addEventListener('dragover', (e) => { e.preventDefault(); });
 inputArea.addEventListener('drop', (e) => {
   e.preventDefault(); dragCounter = 0; dragOverlay.classList.remove('show');
-  const files = [...e.dataTransfer.files].filter(f => f.type.startsWith('image/'));
-  if (files.length) addPendingImages(files);
+  const allFiles = [...e.dataTransfer.files];
+  const imgs = allFiles.filter(f => f.type.startsWith('image/'));
+  const docs = allFiles.filter(f => DOC_EXTENSIONS.some(ext => f.name.toLowerCase().endsWith(ext)));
+  const archives = allFiles.filter(f => isArchiveFile(f.name));
+  if (imgs.length) addPendingImages(imgs);
+  if (docs.length) addPendingDocs(docs);
+  if (archives.length) addPendingDocs(archives);
 });
 
 // Paste image
@@ -2089,6 +2222,47 @@ function removePendingImage(idx) {
 }
 
 function renderImagePreviews() {
+  renderAllPreviews();
+}
+
+function isArchiveFile(name) {
+  const n = name.toLowerCase();
+  return ARCHIVE_EXTENSIONS.some(ext => n.endsWith(ext));
+}
+
+function getFileIcon(name) {
+  const n = name.toLowerCase();
+  if (isArchiveFile(n)) return '\u{1F4E6}'; // 📦
+  const ext = n.split('.').pop();
+  if (ext === 'pdf') return '\u{1F4C4}';
+  if (ext.startsWith('ppt')) return '\u{1F4CA}';
+  return '\u{1F4DD}';
+}
+
+function handleFileSelect(files) {
+  const allFiles = [...files];
+  const imgs = allFiles.filter(f => f.type.startsWith('image/'));
+  const docs = allFiles.filter(f => DOC_EXTENSIONS.some(ext => f.name.toLowerCase().endsWith(ext)));
+  const archives = allFiles.filter(f => isArchiveFile(f.name));
+  if (imgs.length) addPendingImages(imgs);
+  if (docs.length) addPendingDocs(docs);
+  if (archives.length) addPendingDocs(archives);
+  document.getElementById('imgFileInput').value = '';
+}
+
+function addPendingDocs(files) {
+  for (const f of files) {
+    pendingDocs.push({ file: f, name: f.name });
+  }
+  renderAllPreviews();
+}
+
+function removePendingDoc(idx) {
+  pendingDocs.splice(idx, 1);
+  renderAllPreviews();
+}
+
+function renderAllPreviews() {
   imgPreviewStrip.innerHTML = '';
   pendingImages.forEach((img, i) => {
     const div = document.createElement('div');
@@ -2096,21 +2270,27 @@ function renderImagePreviews() {
     div.innerHTML = `<img src="${img.previewUrl}"><button class="remove-img" onclick="removePendingImage(${i})">x</button>`;
     imgPreviewStrip.appendChild(div);
   });
+  pendingDocs.forEach((doc, i) => {
+    const div = document.createElement('div');
+    div.className = 'doc-preview-item';
+    const icon = getFileIcon(doc.name);
+    div.innerHTML = `<span class="doc-icon">${icon}</span><span class="doc-name" title="${doc.name}">${doc.name}</span><button class="remove-doc" onclick="removePendingDoc(${i})">\u2715</button>`;
+    imgPreviewStrip.appendChild(div);
+  });
 }
 
-function handleFileSelect(files) {
-  const imgs = [...files].filter(f => f.type.startsWith('image/'));
-  if (imgs.length) addPendingImages(imgs);
-  document.getElementById('imgFileInput').value = '';
-}
-
-async function uploadImage(file) {
+async function uploadFile(file) {
   const fd = new FormData();
   fd.append('file', file);
   const res = await fetch('/api/upload', { method: 'POST', headers: { 'X-Auth-Token': authToken }, body: fd });
   const data = await res.json();
-  if (data.ok) return data.url;
+  if (data.ok) return data;
   throw new Error(data.error || 'Upload failed');
+}
+
+async function uploadImage(file) {
+  const data = await uploadFile(file);
+  return data.url;
 }
 
 function authHeaders() {
@@ -2252,7 +2432,7 @@ function addTimestamp() {
   chatContainer.appendChild(ts);
 }
 
-function addMessage(role, text, imageUrls) {
+function addMessage(role, text, imageUrls, docNames) {
   if (emptyState) emptyState.style.display = 'none';
   if (msgCount % 5 === 0) addTimestamp();
   msgCount++;
@@ -2275,6 +2455,18 @@ function addMessage(role, text, imageUrls) {
       img.src = url;
       img.onclick = () => window.open(url, '_blank');
       bubble.appendChild(img);
+    });
+  }
+
+  // Render doc badges
+  if (docNames && docNames.length) {
+    docNames.forEach(name => {
+      const badge = document.createElement('div');
+      badge.className = 'chat-doc-badge';
+      const ext = name.split('.').pop().toLowerCase();
+      const icon = ext === 'pdf' ? '\u{1F4C4}' : (ext.startsWith('ppt') ? '\u{1F4CA}' : '\u{1F4DD}');
+      badge.innerHTML = `<span class="doc-icon">${icon}</span>${name}`;
+      bubble.appendChild(badge);
     });
   }
 
@@ -2452,6 +2644,32 @@ function formatMarkdown(text) {
   // Clean up trailing <br>
   html = html.replace(/(<br>)+$/, '');
 
+  // Detect file paths and add download buttons
+  // Match paths like /root/claude-chat/filename.ext (supports CJK chars, tags around path)
+  const downloadExts = 'pdf|html|doc|docx|ppt|pptx|xlsx|xls|csv|zip|tar|gz';
+  const filePathRegex = new RegExp(
+    '(?:<\\/?(code|strong|em|b|i)>)*\\s*(/root/claude-chat/|/root/claude\\-chat/)([^<\\s"]+?\\.(' + downloadExts + '))\\s*(?:<\\/?(code|strong|em|b|i)>)*',
+    'gi'
+  );
+  const seenFiles = new Set();
+  html = html.replace(filePathRegex, (match, _tag1, prefix, filename, ext) => {
+    const cleanName = filename.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/<[^>]*>/g, '');
+    // Deduplicate download buttons for same file
+    if (seenFiles.has(cleanName)) return match;
+    seenFiles.add(cleanName);
+    const displayName = cleanName.length > 40 ? '...' + cleanName.slice(-37) : cleanName;
+    const extLower = ext.toLowerCase();
+    const icon = extLower === 'pdf' ? '\u{1F4C4}' :
+                 extLower.startsWith('ppt') ? '\u{1F4CA}' :
+                 extLower === 'html' ? '\u{1F310}' :
+                 extLower.startsWith('xls') || extLower === 'csv' ? '\u{1F4CA}' : '\u{1F4CE}';
+    return match + '<br><a class="file-download-btn" href="/api/download/' +
+      encodeURIComponent(cleanName) + '" download title="点击下载 ' + escHtml(cleanName) + '">' +
+      '<span class="dl-icon">' + icon + '</span>' +
+      '<span class="dl-name">' + escHtml(displayName) + '</span>' +
+      '<span class="dl-icon">\u2B07</span></a>';
+  });
+
   return html;
 }
 
@@ -2557,8 +2775,10 @@ async function switchSession(id) {
       messages.forEach(m => {
         const role = m.role === 'user' ? 'user' : 'assistant';
         const imgs = (m.content.match(/\[Image: (\/uploads\/[^\]]+)\]/g) || []).map(s => s.match(/\[Image: (\/uploads\/[^\]]+)\]/)[1]);
-        const cleanText = m.content.replace(/\[Image: \/uploads\/[^\]]+\]\s*/g, '').trim();
-        addMessage(role, cleanText, imgs);
+        const docs = (m.content.match(/\[Doc: ([^\]]+)\]/g) || []).map(s => s.match(/\[Doc: ([^\]]+)\]/)[1]);
+        let cleanText = m.content.replace(/\[Image: \/uploads\/[^\]]+\]\s*/g, '');
+        cleanText = cleanText.replace(/\[Doc: [^\]]+\][\s\S]*?\[\/Doc\]\s*/g, '').trim();
+        addMessage(role, cleanText, imgs, docs);
       });
     }
   } catch(e) {}
@@ -2683,7 +2903,8 @@ async function newChat() {
 async function sendMessage() {
   const text = messageInput.value.trim();
   const hasImages = pendingImages.length > 0;
-  if ((!text && !hasImages) || isStreaming) return;
+  const hasDocs = pendingDocs.length > 0;
+  if ((!text && !hasImages && !hasDocs) || isStreaming) return;
 
   // Upload images first
   let uploadedUrls = [];
@@ -2696,20 +2917,40 @@ async function sendMessage() {
     }
     pendingImages.forEach(img => URL.revokeObjectURL(img.previewUrl));
     pendingImages = [];
-    renderImagePreviews();
   }
 
-  addMessage('user', text, uploadedUrls);
+  // Upload documents
+  let docResults = []; // {filename, text}
+  if (hasDocs) {
+    try {
+      docResults = await Promise.all(pendingDocs.map(async (d) => {
+        const res = await uploadFile(d.file);
+        return { filename: res.filename || d.name, text: res.text || '' };
+      }));
+    } catch(e) {
+      showNotification('Document upload failed: ' + e.message);
+      return;
+    }
+    pendingDocs = [];
+  }
+  renderAllPreviews();
+
+  const docNames = docResults.map(d => d.filename);
+  addMessage('user', text, uploadedUrls, docNames);
   messageInput.value = '';
   messageInput.style.height = 'auto';
   isStreaming = true;
   sendBtn.disabled = true;
 
-  // Build message text with image references
+  // Build message text with image references and doc content
   let msgText = text;
   if (uploadedUrls.length) {
     const imgDesc = uploadedUrls.map(u => `[Image: ${u}]`).join(' ');
     msgText = msgText ? msgText + '\n' + imgDesc : imgDesc;
+  }
+  if (docResults.length) {
+    const docDesc = docResults.map(d => `[Doc: ${d.filename}]\n${d.text}\n[/Doc]`).join('\n');
+    msgText = msgText ? msgText + '\n\n' + docDesc : docDesc;
   }
 
   addTypingIndicator();
@@ -2764,7 +3005,15 @@ async function sendMessage() {
               const data = JSON.parse(line.slice(6));
               if (data.heartbeat) {
                 taskGotData();
-                taskStatus.textContent = 'PROCESSING...';
+                if (data.progress) {
+                  taskProgressStep(data.progress);
+                } else {
+                  if (!taskCurrentStep) {
+                    taskStatus.textContent = data.elapsed ?
+                      'PROCESSING... ' + Math.floor(data.elapsed / 60) + 'M' + (data.elapsed % 60) + 'S' :
+                      'PROCESSING...';
+                  }
+                }
                 continue;
               }
               if (data.text) {
@@ -2813,8 +3062,10 @@ async function initApp() {
       messages.forEach(m => {
         const role = m.role === 'user' ? 'user' : 'assistant';
         const imgs = (m.content.match(/\[Image: (\/uploads\/[^\]]+)\]/g) || []).map(s => s.match(/\[Image: (\/uploads\/[^\]]+)\]/)[1]);
-        const cleanText = m.content.replace(/\[Image: \/uploads\/[^\]]+\]\s*/g, '').trim();
-        addMessage(role, cleanText, imgs);
+        const docs = (m.content.match(/\[Doc: ([^\]]+)\]/g) || []).map(s => s.match(/\[Doc: ([^\]]+)\]/)[1]);
+        let cleanText = m.content.replace(/\[Image: \/uploads\/[^\]]+\]\s*/g, '');
+        cleanText = cleanText.replace(/\[Doc: [^\]]+\][\s\S]*?\[\/Doc\]\s*/g, '').trim();
+        addMessage(role, cleanText, imgs, docs);
       });
     }
   } catch(e) {}
@@ -3427,7 +3678,8 @@ sendMessage = async function() {
 
   const text = messageInput.value.trim();
   const hasImages = pendingImages.length > 0;
-  if ((!text && !hasImages) || isStreaming) return;
+  const hasDocs = pendingDocs.length > 0;
+  if ((!text && !hasImages && !hasDocs) || isStreaming) return;
 
   // Upload images first
   let uploadedUrls = [];
@@ -3440,10 +3692,26 @@ sendMessage = async function() {
     }
     pendingImages.forEach(img => URL.revokeObjectURL(img.previewUrl));
     pendingImages = [];
-    renderImagePreviews();
   }
 
-  addMessage('user', text, uploadedUrls);
+  // Upload documents
+  let docResults = [];
+  if (hasDocs) {
+    try {
+      docResults = await Promise.all(pendingDocs.map(async (d) => {
+        const res = await uploadFile(d.file);
+        return { filename: res.filename || d.name, text: res.text || '' };
+      }));
+    } catch(e) {
+      showNotification('Document upload failed: ' + e.message);
+      return;
+    }
+    pendingDocs = [];
+  }
+  renderAllPreviews();
+
+  const docNames = docResults.map(d => d.filename);
+  addMessage('user', text, uploadedUrls, docNames);
   messageInput.value = '';
   messageInput.style.height = 'auto';
   isStreaming = true;
@@ -3453,6 +3721,10 @@ sendMessage = async function() {
   if (uploadedUrls.length) {
     const imgDesc = uploadedUrls.map(u => `[Image: ${u}]`).join(' ');
     msgText = msgText ? msgText + '\n' + imgDesc : imgDesc;
+  }
+  if (docResults.length) {
+    const docDesc = docResults.map(d => `[Doc: ${d.filename}]\n${d.text}\n[/Doc]`).join('\n');
+    msgText = msgText ? msgText + '\n\n' + docDesc : docDesc;
   }
 
   // Determine which agents to query
@@ -3511,7 +3783,11 @@ sendMessage = async function() {
             if (line.startsWith('data: ')) {
               try {
                 const data = JSON.parse(line.slice(6));
-                if (data.heartbeat) { taskGotData(); continue; }
+                if (data.heartbeat) {
+                  taskGotData();
+                  if (data.progress) { taskProgressStep(data.progress); }
+                  continue;
+                }
                 if (data.text) {
                   fullText += data.text;
                   // Keep the tag, update text after it
